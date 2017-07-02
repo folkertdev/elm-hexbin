@@ -311,7 +311,7 @@ colorEncoding largest =
     , fillColorMin = Color.white
     , fillColorMax = Color.rgb 70 130 180
     , modifyRadius = \{ radius } -> radius
-    , interpolateColor = \{ value } -> largest / 20
+    , interpolateColor = \{ value } -> toFloat value / largest
     , isEmpty = \cell -> cell == 0
     }
 
@@ -363,7 +363,7 @@ renderHexagon config radius row column count =
                 |> interpolate LAB config.fillColorMin config.fillColorMax
                 |> colorToHex
     in
-        if config.displayEmpty || config.isEmpty count then
+        if config.displayEmpty || not (config.isEmpty count) then
             Svg.path
                 [ d (Path.pathToString path)
                 , transform (translate t)
