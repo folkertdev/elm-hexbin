@@ -1,11 +1,14 @@
 module Example exposing (..)
 
-import Svg
-import Svg.Attributes exposing (..)
+import TypedSvg as Svg
+import TypedSvg.Types as Svg exposing (Transform(Translate), Length(Px), ClipPath(ClipPathFunc))
+import TypedSvg.Attributes exposing (..)
+import TypedSvg.Attributes.InPx as InPx
 import Random.Pcg as Random
 import Random.Pcg.Float as Random
 import Html
 import Html.Events exposing (onClick)
+import Html.Attributes exposing (id)
 import HexBin exposing (HexBin)
 import Visualization.Scale as Scale
 import Visualization.Axis as Axis exposing (defaultOptions)
@@ -89,32 +92,32 @@ view model =
             Scale.linear ( 0, config.height ) ( config.height, 0 )
 
         xAxis =
-            Svg.g [ class "axis", transform (translate ( 0, config.height )) ]
+            Svg.g [ class [ "axis" ], transform [ uncurry Translate ( 0, config.height ) ] ]
                 [ Axis.axis { defaultOptions | orientation = Axis.Bottom, tickFormat = Just (Scale.tickFormat scaleX 2) } scaleX ]
 
         yAxis =
-            Svg.g [ class "axis", transform (translate ( 0, 0 )) ]
+            Svg.g [ class [ "axis" ], transform [ uncurry Translate ( 0, 0 ) ] ]
                 [ Axis.axis { defaultOptions | orientation = Axis.Left } scaleY ]
 
         clip =
-            Svg.clipPath [ id "clip" ] [ Svg.rect [ width (toString config.width), height (toString config.height) ] [] ]
+            Svg.clipPath [ id "clip" ] [ Svg.rect [ InPx.width config.width, InPx.height config.height ] [] ]
 
         hexagons =
             case model.mode of
                 AreaEncoding ->
                     HexBin.render (HexBin.areaEncoding ( 0, 50 ) ( 0, 20 )) model.hexbin
-                        |> Svg.g [ class "hexagon", clipPath "url(#clip)" ]
+                        |> Svg.g [ class [ "hexagon" ], clipPath (ClipPathFunc "url(#clip)") ]
 
                 ColorEncoding ->
                     HexBin.render (HexBin.colorEncoding 20) model.hexbin
-                        |> Svg.g [ class "hexagon", clipPath "url(#clip)" ]
+                        |> Svg.g [ class [ "hexagon" ], clipPath (ClipPathFunc "url(#clip)") ]
     in
         Html.div []
             [ Svg.svg
-                [ width (toString <| config.width + margin.left + margin.right)
-                , height (toString <| config.height + margin.top + margin.bottom)
+                [ InPx.width (config.width + margin.left + margin.right)
+                , InPx.height (config.height + margin.top + margin.bottom)
                 ]
-                [ Svg.g [ transform (translate ( margin.left, margin.top )) ]
+                [ Svg.g [ transform [ uncurry Translate ( margin.left, margin.top ) ] ]
                     [ xAxis
                     , yAxis
                     , clip
@@ -123,8 +126,3 @@ view model =
                 ]
             , Html.button [ onClick Switch ] [ Html.text "Swich encoding" ]
             ]
-
-
-translate : ( number1, number2 ) -> String
-translate ( x, y ) =
-    "translate(" ++ Basics.toString x ++ "," ++ Basics.toString y ++ ")"

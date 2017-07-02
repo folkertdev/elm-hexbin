@@ -46,10 +46,11 @@ import BoundingBox as BBox
 import Vec2
 import Array
 import Color exposing (Color)
-import Svg exposing (Svg)
-import Svg.Attributes exposing (..)
-import Color.Convert exposing (colorToHex)
-import Color.Interpolate exposing (Space(..), interpolate)
+import TypedSvg as Svg
+import TypedSvg.Core as Svg exposing (Svg)
+import TypedSvg.Types as Svg exposing (Transform(Translate), Length(Px))
+import TypedSvg.Attributes exposing (..)
+import Color.Interpolate exposing (Space(LAB), interpolate)
 import Svg.Path as Path exposing (subpath, startAt, lineToMany, closed)
 
 
@@ -359,15 +360,14 @@ renderHexagon config radius row column count =
         fillColor =
             config.interpolateColor { radius = radius, value = count, row = row, column = column }
                 |> interpolate LAB config.fillColorMin config.fillColorMax
-                |> colorToHex
     in
         if config.displayEmpty || not (config.isEmpty count) then
             Svg.path
                 [ d (Path.pathToString path)
-                , transform (translate t)
+                , transform [ uncurry Translate t ]
                 , fill fillColor
-                , stroke (colorToHex config.borderColor)
-                , strokeWidth (toString config.borderWidth)
+                , stroke config.borderColor
+                , strokeWidth (Px config.borderWidth)
                 ]
                 []
         else
@@ -382,11 +382,6 @@ polyline points =
 
         x :: xs ->
             [ subpath (startAt x) closed [ lineToMany xs ] ]
-
-
-translate : ( number1, number2 ) -> String
-translate ( x, y ) =
-    "translate(" ++ Basics.toString x ++ "," ++ Basics.toString y ++ ")"
 
 
 
