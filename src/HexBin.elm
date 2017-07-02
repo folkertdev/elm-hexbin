@@ -17,11 +17,7 @@ module HexBin
         , toList
         )
 
-{-|
-
-# HexBin
-
-A module for binning 2D points into hexagons.
+{-| A module for binning 2D points into hexagons.
 
 Play with it [on Ellie](https://ellie-app.com/3DzPcKrpfdga1/0)
 
