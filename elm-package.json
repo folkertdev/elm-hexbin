@@ -1,12 +1,14 @@
 {
-    "version": "1.0.0",
+    "version": "1.0.1",
     "summary": "hexbin density plots",
     "repository": "https://github.com/folkertdev/elm-hexbin.git",
     "license": "BSD3",
     "source-directories": [
         "src"
     ],
-    "exposed-modules": [ "HexBin"],
+    "exposed-modules": [
+        "HexBin"
+    ],
     "dependencies": {
         "eeue56/elm-flat-matrix": "3.0.2 <= v < 4.0.0",
         "elm-lang/core": "5.1.1 <= v < 6.0.0",
