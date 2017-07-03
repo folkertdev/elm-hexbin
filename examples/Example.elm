@@ -1,15 +1,24 @@
 module Example exposing (..)
 
+{-| an example of using HexBins to plot data
+
+Uses
+
+* elm-community/typed-svg for the svg
+* mgold/elm-random-pcg and kress95/random-pcg-extra for generating data,
+* gampleman/elm-visualization for axes
+-}
+
+import HexBin exposing (HexBin)
 import TypedSvg as Svg
 import TypedSvg.Types as Svg exposing (Transform(Translate), Length(Px), ClipPath(ClipPathFunc))
 import TypedSvg.Attributes exposing (..)
 import TypedSvg.Attributes.InPx as InPx
-import Random.Pcg as Random
-import Random.Pcg.Float as Random
 import Html
 import Html.Events exposing (onClick)
 import Html.Attributes exposing (id)
-import HexBin exposing (HexBin)
+import Random.Pcg as Random
+import Random.Pcg.Float as Random
 import Visualization.Scale as Scale
 import Visualization.Axis as Axis exposing (defaultOptions)
 
@@ -30,6 +39,14 @@ margin =
 
 config =
     { width = 960, height = 500, radius = 20, stdDev = 50 }
+
+
+{-| Generate some testing data (a normal distribution)
+-}
+generateData : Random.Generator (List ( Float, Float ))
+generateData =
+    Random.map2 (,) (Random.normal (config.width / 4) config.stdDev) (Random.normal (config.height / 4) config.stdDev)
+        |> Random.list 2000
 
 
 type Mode
@@ -77,11 +94,6 @@ update msg model =
             )
 
 
-generateData =
-    Random.map2 (,) (Random.normal (config.width / 4) config.stdDev) (Random.normal (config.height / 4) config.stdDev)
-        |> Random.list 2000
-
-
 view : Model -> Html.Html Msg
 view model =
     let
@@ -92,32 +104,39 @@ view model =
             Scale.linear ( 0, config.height ) ( config.height, 0 )
 
         xAxis =
-            Svg.g [ class [ "axis" ], transform [ uncurry Translate ( 0, config.height ) ] ]
-                [ Axis.axis { defaultOptions | orientation = Axis.Bottom, tickFormat = Just (Scale.tickFormat scaleX 2) } scaleX ]
+            Svg.g [ class [ "axis" ], transform [ Translate 0 config.height ] ]
+                [ Axis.axis { defaultOptions | orientation = Axis.Bottom } scaleX ]
 
         yAxis =
-            Svg.g [ class [ "axis" ], transform [ uncurry Translate ( 0, 0 ) ] ]
+            Svg.g [ class [ "axis" ] ]
                 [ Axis.axis { defaultOptions | orientation = Axis.Left } scaleY ]
 
+        -- construct a clip path to hide hexagons outside/on the border of our plot
         clip =
             Svg.clipPath [ id "clip" ] [ Svg.rect [ InPx.width config.width, InPx.height config.height ] [] ]
 
-        hexagons =
+        encoding =
             case model.mode of
                 AreaEncoding ->
-                    HexBin.render (HexBin.areaEncoding ( 0, 50 ) ( 0, 20 )) model.hexbin
-                        |> Svg.g [ class [ "hexagon" ], clipPath (ClipPathFunc "url(#clip)") ]
+                    -- map the value (it is assumend that lies between 0 and 50) to a radius between 0 and 20.
+                    HexBin.areaEncoding ( 0, 50 ) ( 0, 20 )
 
                 ColorEncoding ->
-                    HexBin.render (HexBin.colorEncoding 20) model.hexbin
-                        |> Svg.g [ class [ "hexagon" ], clipPath (ClipPathFunc "url(#clip)") ]
+                    -- map the value (it is assumed to be at most 20) to a color
+                    -- the actual maximum value is larger than 20,
+                    -- the use of LAB interpolation causes the color to become deeper/darker for those larger value
+                    HexBin.colorEncoding 20
+
+        hexagons =
+            HexBin.render encoding model.hexbin
+                |> Svg.g [ class [ "hexagon" ], clipPath (ClipPathFunc "url(#clip)") ]
     in
         Html.div []
             [ Svg.svg
                 [ InPx.width (config.width + margin.left + margin.right)
                 , InPx.height (config.height + margin.top + margin.bottom)
                 ]
-                [ Svg.g [ transform [ uncurry Translate ( margin.left, margin.top ) ] ]
+                [ Svg.g [ transform [ Translate margin.left margin.top ] ]
                     [ xAxis
                     , yAxis
                     , clip
